@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
-
+import joblib
+import os
 
 class Network:
     def __init__(self, inputNeurons, loss):
@@ -10,6 +11,25 @@ class Network:
         self.alpha = 0.9
         self.stats_history = list()
 
+    def save_model(self, name):
+        model = {
+            'inputNeurons': self.inputNeurons,
+            'loss': self.loss.__class__,
+            'hidden_layers': [(layer.weights, layer.biases, layer.activation.__class__) for layer in self.hidden_layers]
+        }
+        if not os.path.exists('model'):
+            os.makedirs('model')
+        joblib.dump(model, f"model/{name}.pkl")
+
+    def load_model(self, name):
+        model = joblib.load(f"model/{name}.pkl")
+        net = Network(model['inputNeurons'], model['loss'])
+        for weights, biases, activation in model['hidden_layers']:
+            layer = Layer(0, 0, ReLU)
+            layer.load_layer(weights, biases, activation)
+            net.hidden_layers.append(layer)
+        return net
+            
     def add_layer(self, numInputs, neurons, activation):
         self.hidden_layers.append(Layer(numInputs, neurons, activation))
 
@@ -67,7 +87,7 @@ class Network:
         yPred = np.argmax(self.current_predictions, axis=1)
 
         stats = {}
-        stats["loss"] = self.current_loss
+        stats["loss"] = self.loss.calculate(self.current_predictions, y)
         # tp + tn / all
         stats["accuracy"] = np.mean(yPred == y)
         # tp / tp + fp
@@ -141,6 +161,11 @@ class Layer:
     def __init__(self, numInputs, neurons, activation):
         self.weights = np.random.rand(numInputs, neurons) * 0.01
         self.biases = np.zeros((1, neurons))
+        self.activation = activation()
+
+    def load_layer(self, weights, biases, activation):
+        self.weights = weights
+        self.biases = biases
         self.activation = activation()
 
     def forward(self, inputs):
