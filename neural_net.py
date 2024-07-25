@@ -1,4 +1,6 @@
 import numpy as np
+import matplotlib.pyplot as plt
+
 
 class Network:
     def __init__(self, inputNeurons, loss):
@@ -6,6 +8,7 @@ class Network:
         self.inputNeurons = inputNeurons
         self.loss = loss()
         self.alpha = 0.9
+        self.stats_history = list()
 
     def add_layer(self, numInputs, neurons, activation):
         self.hidden_layers.append(Layer(numInputs, neurons, activation))
@@ -30,7 +33,9 @@ class Network:
         for layer in reversed(self.hidden_layers):
             gradient = layer.backward(gradient, self.alpha)
 
-    def train(self, inputs, y, epochs, report=0):
+    def train(self, inputs, y, epochs=1000, report=0, numReports=100):
+        self.stats_history.clear()
+
         for i in range(epochs + 1):
             self.current_predictions = self.forward(inputs)
             self.current_loss = self.loss.calculate(self.current_predictions, y)
@@ -40,8 +45,19 @@ class Network:
             for layer in reversed(self.hidden_layers):
                 gradient = layer.backward(gradient, self.alpha)
 
-            if report != 0:
-                if i % report == 0:
+            # Saves stats if report is 1
+            # displays stats if report is 2
+            # Does both if 3
+            if report == 1:
+                self.stats_history.append(self.get_stats(inputs, y))
+            elif report == 2:
+                if i % numReports == 0:
+                    print(f"Epoch {i}, Loss: {self.current_loss}")
+                    print(f"Stats {self.get_stats(inputs, y)}")
+                    print(f"{self.current_predictions}\n")
+            elif report == 3:
+                self.stats_history.append(self.get_stats(inputs, y))
+                if i % numReports == 0:
                     print(f"Epoch {i}, Loss: {self.current_loss}")
                     print(f"Stats {self.get_stats(inputs, y)}")
                     print(f"{self.current_predictions}\n")
@@ -51,6 +67,7 @@ class Network:
         yPred = np.argmax(self.current_predictions, axis=1)
 
         stats = {}
+        stats["loss"] = self.current_loss
         # tp + tn / all
         stats["accuracy"] = np.mean(yPred == y)
         # tp / tp + fp
@@ -62,6 +79,63 @@ class Network:
 
         return stats
 
+    def plot_metrics(self):
+        if len(self.stats_history) == 0:
+            print("No data available to plot. Use report = 1 or report = 3 while training to generate data.")
+            return
+
+        lossVals = [stats["loss"] for stats in self.stats_history]
+        accuracyVals = [stats["accuracy"] for stats in self.stats_history]
+        precisionVals = [stats["precision"] for stats in self.stats_history]
+        recallVals = [stats["recall"] for stats in self.stats_history]
+        f1Vals = [stats["f1_score"] for stats in self.stats_history]
+        epochs = range(0, len(self.stats_history))
+
+        
+        plt.figure(figsize=(10, 10))
+        
+        # Plot loss
+        plt.subplot(3, 2, 1)
+        plt.plot(epochs, lossVals, 'b-', label='Loss')
+        plt.xlabel('Epochs')
+        plt.ylabel('Loss')
+        plt.title('Loss over Epochs')
+        plt.legend()
+        
+        # Plot accuracy
+        plt.subplot(3, 2, 2)
+        plt.plot(epochs, accuracyVals, 'r-', label='Accuracy')
+        plt.xlabel('Epochs')
+        plt.ylabel('Accuracy')
+        plt.title('Accuracy over Epochs')
+        plt.legend()
+        
+        # Plot precision
+        plt.subplot(3, 2, 3)
+        plt.plot(epochs, precisionVals, 'g-', label='Precision')
+        plt.xlabel('Epochs')
+        plt.ylabel('Precision')
+        plt.title('Precision over Epochs')
+        plt.legend()
+        
+        # Plot recall
+        plt.subplot(3, 2, 4)
+        plt.plot(epochs, recallVals, 'm-', label='Recall')
+        plt.xlabel('Epochs')
+        plt.ylabel('Recall')
+        plt.title('Recall over Epochs')
+        plt.legend()
+        
+        # Plot F1 score
+        plt.subplot(3, 2, 5)
+        plt.plot(epochs, f1Vals, 'c-', label='F1 Score')
+        plt.xlabel('Epochs')
+        plt.ylabel('F1 Score')
+        plt.title('F1 Score over Epochs')
+        plt.legend()
+        
+        plt.tight_layout()
+        plt.show()
 
 class Layer:
     def __init__(self, numInputs, neurons, activation):
