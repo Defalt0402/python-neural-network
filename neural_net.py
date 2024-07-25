@@ -21,15 +21,47 @@ class Network:
         return currentOutputs
 
     def partial_fit(self, inputs, y):
+        # Calculate predictions and loss for reporting and use
         self.current_predictions = self.forward(inputs)
-    
-        # Calculate loss
         self.current_loss = self.loss.calculate(self.current_predictions, y)
         
         # Backward pass
         gradient = self.loss.backward(self.current_predictions, y)
         for layer in reversed(self.hidden_layers):
             gradient = layer.backward(gradient, self.alpha)
+
+    def train(self, inputs, y, epochs, report=0):
+        for i in range(epochs + 1):
+            self.current_predictions = self.forward(inputs)
+            self.current_loss = self.loss.calculate(self.current_predictions, y)
+            
+            # Backward pass
+            gradient = self.loss.backward(self.current_predictions, y)
+            for layer in reversed(self.hidden_layers):
+                gradient = layer.backward(gradient, self.alpha)
+
+            if report != 0:
+                if i % report == 0:
+                    print(f"Epoch {i}, Loss: {self.current_loss}")
+                    print(f"Stats {self.get_stats(inputs, y)}")
+                    print(f"{self.current_predictions}\n")
+
+    def get_stats(self, inputs, y):
+        self.current_predictions = self.forward(inputs)
+        yPred = np.argmax(self.current_predictions, axis=1)
+
+        stats = {}
+        # tp + tn / all
+        stats["accuracy"] = np.mean(yPred == y)
+        # tp / tp + fp
+        stats["precision"] = np.sum((yPred == y) & (yPred == 1)) / np.sum(yPred == 1)
+        # tp / tp + fn
+        stats["recall"] = np.sum((yPred == y) & (y == 1)) / np.sum(y == 1)
+        # 2 * precision * recall / precision + recall
+        stats["f1_score"] = 2 * (stats["precision"] * stats["recall"]) / (stats["precision"] + stats["recall"])
+
+        return stats
+
 
 class Layer:
     def __init__(self, numInputs, neurons, activation):
