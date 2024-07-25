@@ -45,8 +45,15 @@ net = Network(784, Cross_Entropy_Loss)
 net.add_layer(784, 32, ReLU)
 net.add_layer(32, 10, Softmax)
 
-net.train(trainImages[0:10000], trainLabels[0:10000], 1000, 3)
-net.plot_metrics("MNIST first run, (32, 32, 16, 10), 1000 epoch")
+for i in range(0, 6):
+    if i == 0:
+        net.train(trainImages[0:10000], trainLabels[0:10000], 200, 1)
+    else:
+        net.train(trainImages[(i*10000) + 1:(i+1)*10000], trainLabels[(i*10000) + 1:(i+1)*10000], 200, 1)
+
+net.plot_metrics("MNIST Second run, batches, (32, 10), 1000 epoch")
+
+net.save_model("MNIST_32x10")
 
 # inputs = np.array([[0, 1], [0, 0], [1, 2], [2, 2], [2, 1], [2, 3]])
 # labels = np.array([0, 0, 1, 1, 1, 1])

@@ -54,8 +54,6 @@ class Network:
             gradient = layer.backward(gradient, self.alpha)
 
     def train(self, inputs, y, epochs=1000, report=0, numReports=100):
-        self.stats_history.clear()
-
         for i in range(epochs + 1):
             self.current_predictions = self.forward(inputs)
             self.current_loss = self.loss.calculate(self.current_predictions, y)
