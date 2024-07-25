@@ -20,7 +20,14 @@ class Network:
 
         return currentOutputs
 
-    def backward(self, gradient):
+    def partial_fit(self, inputs, y):
+        self.current_predictions = self.forward(inputs)
+    
+        # Calculate loss
+        self.current_loss = self.loss.calculate(self.current_predictions, y)
+        
+        # Backward pass
+        gradient = self.loss.backward(self.current_predictions, y)
         for layer in reversed(self.hidden_layers):
             gradient = layer.backward(gradient, self.alpha)
 

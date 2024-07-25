@@ -12,19 +12,12 @@ labels = np.array([0, 0, 1, 1, 1, 1])
 epochs = 1000
 for epoch in range(epochs):
     # Forward pass
-    predictions = net.forward(inputs)
-    
-    # Calculate loss
-    loss = net.loss.calculate(predictions, labels)
-    
-    # Backward pass
-    gradient = net.loss.backward(predictions, labels)
-    net.backward(gradient)
+    net.partial_fit(inputs, labels)
     
     # Print loss every 100 epochs
     if epoch % 100 == 0:
-        print(f"Epoch {epoch}, Loss: {loss}")
-        print(predictions)
+        print(f"Epoch {epoch}, Loss: {net.current_loss}")
+        print(net.current_predictions)
 
 predictions = net.forward(inputs)
 loss = net.loss.calculate(predictions, labels)
