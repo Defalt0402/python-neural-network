@@ -8,7 +8,7 @@ class Network:
         self.hidden_layers = list()
         self.inputNeurons = inputNeurons
         self.loss = loss()
-        self.alpha = 0.9
+        self.alpha = 0.1
         self.stats_history = list()
 
     def save_model(self, name):
@@ -88,14 +88,23 @@ class Network:
 
         stats = {}
         stats["loss"] = self.loss.calculate(self.current_predictions, y)
-        # tp + tn / all
+        
+        # Accuracy
         stats["accuracy"] = np.mean(yPred == y)
-        # tp / tp + fp
-        stats["precision"] = np.sum((yPred == y) & (yPred == 1)) / np.sum(yPred == 1)
-        # tp / tp + fn
-        stats["recall"] = np.sum((yPred == y) & (y == 1)) / np.sum(y == 1)
-        # 2 * precision * recall / precision + recall
-        stats["f1_score"] = 2 * (stats["precision"] * stats["recall"]) / (stats["precision"] + stats["recall"])
+        
+        # Precision
+        true_positive = np.sum((yPred == y) & (yPred == 1))
+        predicted_positive = np.sum(yPred == 1)
+        stats["precision"] = true_positive / predicted_positive if predicted_positive > 0 else 0
+        
+        # Recall
+        actual_positive = np.sum(y == 1)
+        stats["recall"] = true_positive / actual_positive if actual_positive > 0 else 0
+        
+        # F1 Score
+        precision = stats["precision"]
+        recall = stats["recall"]
+        stats["f1_score"] = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
 
         return stats
 
