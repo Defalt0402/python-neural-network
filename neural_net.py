@@ -99,7 +99,7 @@ class Network:
 
         return stats
 
-    def plot_metrics(self):
+    def plot_metrics(self, saveName=None):
         if len(self.stats_history) == 0:
             print("No data available to plot. Use report = 1 or report = 3 while training to generate data.")
             return
@@ -155,7 +155,14 @@ class Network:
         plt.legend()
         
         plt.tight_layout()
+
+        if saveName is not None:
+            if not os.path.exists('graphs'):
+                os.makedirs('graphs')
+            plt.savefig(f"graphs/{saveName}.png")
+
         plt.show()
+        
 
 class Layer:
     def __init__(self, numInputs, neurons, activation):
