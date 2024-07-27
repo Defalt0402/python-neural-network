@@ -247,3 +247,10 @@ class Cross_Entropy_Loss(Loss):
         self.dinputs[range(numSamples), labels] -= 1
         self.dinputs = self.dinputs / numSamples
         return self.dinputs
+    
+class Mean_Squared_Error_Loss(Loss):
+    def calculate(self, yPred, y):
+        return np.mean((yPred - y) ** 2)
+    
+    def backward(self, yPred, y):
+        return 2 * (yPred - y) / y.size
