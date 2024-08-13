@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import joblib
 import os
 
+## Holds the overall network structure
 class Network:
     def __init__(self, inputNeurons, loss):
         self.hidden_layers = list()
@@ -11,6 +12,7 @@ class Network:
         self.alpha = 0.1
         self.stats_history = list()
 
+    ## Saves the model as a pkl file
     def save_model(self, name):
         model = {
             'inputNeurons': self.inputNeurons,
@@ -21,6 +23,7 @@ class Network:
             os.makedirs('model')
         joblib.dump(model, f"model/{name}.pkl")
 
+    ## Loads from a pkl file
     def load_model(self, name):
         model = joblib.load(f"model/{name}.pkl")
         net = Network(model['inputNeurons'], model['loss'])
@@ -33,16 +36,21 @@ class Network:
     def add_layer(self, numInputs, neurons, activation):
         self.hidden_layers.append(Layer(numInputs, neurons, activation))
 
+    ## Performs a single foward pass of the network
+    # Returns the outputs of the network
     def forward(self, inputs):
         self.inputs = inputs
         currentOutputs = inputs
 
+        # Get outputs from each layer, feed into next
         for layer in self.hidden_layers:
             layer.forward(currentOutputs)
             currentOutputs = layer.outputs
 
         return currentOutputs
 
+    ## Performs a single backpropagation on the network
+    # Takes inputs and true output for given inputs
     def partial_fit(self, inputs, y):
         # Calculate predictions and loss for reporting and use
         self.current_predictions = self.forward(inputs)
@@ -53,8 +61,13 @@ class Network:
         for layer in reversed(self.hidden_layers):
             gradient = layer.backward(gradient, self.alpha)
 
+    ## Trains a network
+    # Takes inputs, true output for given inputs, number of training iterations,
+    #       report - where or not to save and display statistics about training
+    #       numReports - how often to report 
     def train(self, inputs, y, epochs=1000, report=0, numReports=100):
         for i in range(epochs + 1):
+            # Make prediction with current network
             self.current_predictions = self.forward(inputs)
             self.current_loss = self.loss.calculate(self.current_predictions, y)
             
@@ -80,6 +93,7 @@ class Network:
                     print(f"Stats {self.get_stats(inputs, y)}")
                     print(f"{self.current_predictions}\n")
 
+    ## Returns a dictionary containing statistics about training accuracy over time
     def get_stats(self, inputs, y):
         self.current_predictions = self.forward(inputs)
         yPred = np.argmax(self.current_predictions, axis=1)
@@ -106,6 +120,7 @@ class Network:
 
         return stats
 
+    ## Plots and saves graphs for each stat
     def plot_metrics(self, saveName=None):
         if len(self.stats_history) == 0:
             print("No data available to plot. Use report = 1 or report = 3 while training to generate data.")
@@ -170,24 +185,27 @@ class Network:
 
         plt.show()
         
-
+## Used to create individual layers with different activations and sizes
 class Layer:
     def __init__(self, numInputs, neurons, activation):
         self.weights = np.random.rand(numInputs, neurons) * 0.01
         self.biases = np.zeros((1, neurons))
         self.activation = activation()
 
+    ## Used to load layer when loading model from file
     def load_layer(self, weights, biases, activation):
         self.weights = weights
         self.biases = biases
         self.activation = activation()
 
+    ## Performs a single forward pass
     def forward(self, inputs):
         self.inputs = inputs
         self.outputs = np.dot(inputs, self.weights) + self.biases
         self.activation.forward(self.outputs)
         self.outputs = self.activation.outputs
 
+    ## Performs a single backwards pass/backpropagation
     def backward(self, gradient, learning_rate):
         self.activation.backward(gradient)
         gradient = self.activation.dinputs
@@ -201,7 +219,6 @@ class Layer:
         
         return self.dinputs
 
-
 class ReLU:
     def forward(self, inputs):
         self.inputs = inputs
@@ -211,7 +228,6 @@ class ReLU:
         self.dinputs = gradient.copy()
         self.dinputs[self.inputs <= 0] = 0
 
-
 class Softmax:
     def forward(self, inputs):
         expVals = np.exp(inputs - np.max(inputs, axis=1, keepdims=True))
@@ -220,6 +236,7 @@ class Softmax:
     def backward(self, gradient):
         self.dinputs = gradient.copy() 
 
+## Superclass for loss functions
 class Loss:
     def calculate(self, yPred, y):
         return np.mean(self.forward(yPred, y))

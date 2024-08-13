@@ -2,6 +2,7 @@ from neural_net import *
 import numpy as np
 import struct
 
+## Loads mnist images into an array of size(number of images, 28, 28)
 def read_mnist(filePath):
     with open(filePath, 'rb') as f:
         # Read the header
@@ -15,6 +16,7 @@ def read_mnist(filePath):
         
     return images
 
+## Loads mnist labels 
 def read_labels(filePath):
     with open(filePath, 'rb') as f:
         # Read the header
@@ -26,45 +28,18 @@ def read_labels(filePath):
         
     return labels
 
+## Encodes labels into one hot format
 def one_hot_encode(labels, num_classes):
     return np.eye(num_classes)[labels]
 
-trainImages = read_mnist("MNIST_ORG/train-images.idx3-ubyte")
-trainLabels = read_labels("MNIST_ORG/train-labels.idx1-ubyte")
-trainImages = trainImages.reshape(trainImages.shape[0], -1).astype(np.float32) / 255.0
-# trainLabels = one_hot_encode(trainLabels, 10)
-
+## Load images and labels for testing
 testImages = read_mnist("MNIST_ORG/t10k-images.idx3-ubyte")
 testLabels = read_labels("MNIST_ORG/t10k-labels.idx1-ubyte")
 testImages = testImages.reshape(testImages.shape[0], -1).astype(np.float32) / 255.0
-# testLabels = one_hot_encode(testLabels, 10)
 
-print(trainLabels)
+## Loads and tests the network
+net = Network(0, Cross_Entropy_Loss)
+net = net.load_model("MNIST_32x10")
 
-net = Network(784, Cross_Entropy_Loss)
-net.add_layer(784, 32, ReLU)
-net.add_layer(32, 10, Softmax)
-
-for i in range(0, 6):
-    if i == 0:
-        net.train(trainImages[0:10000], trainLabels[0:10000], 200, 1)
-    else:
-        net.train(trainImages[(i*10000) + 1:(i+1)*10000], trainLabels[(i*10000) + 1:(i+1)*10000], 200, 1)
-
-net.plot_metrics("MNIST Second run, batches, (32, 10), 1000 epoch")
-
-net.save_model("MNIST_32x10")
-
-# inputs = np.array([[0, 1], [0, 0], [1, 2], [2, 2], [2, 1], [2, 3]])
-# labels = np.array([0, 0, 1, 1, 1, 1])
-
-# net.train(inputs, labels, 1000, 3)
-# net.plot_metrics("test")
-
-# net.save_model("test")
-
-# net2 = Network(2, Cross_Entropy_Loss).load_model("test")
-
-# predictions = net2.forward(inputs)
-# print(net2.get_stats(inputs, labels))
-# print(predictions)
+stats = net.get_stats(testImages, testLabels)
+print(stats)
